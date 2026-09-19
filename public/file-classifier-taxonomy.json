@@ -1,0 +1,537 @@
+{
+  "version": "1.2.0",
+  "name": "Default Complete Taxonomy",
+  "description": "Standard multi-domain taxonomy covering Documents, Media, Code, Work, Personal, and Specialty categories with strict safety policies.",
+  "resolution_policy": {
+    "dry_run_default": true,
+    "max_content_check_bytes": 32768,
+    "never_open_patterns": [
+      ".env*",
+      "*.pem",
+      "*.key",
+      "*id_rsa*",
+      "*credentials*",
+      "*secret*",
+      "*token*",
+      "*.pfx",
+      "*.p12",
+      "*.kdbx",
+      "*.exe",
+      "*.dll",
+      "*.dmg",
+      "*.bin"
+    ],
+    "confidence_threshold_auto": 0.75,
+    "chunk_size": 2500,
+    "allow_overwrite": false
+  },
+  "ignore_rules": [
+    {
+      "id": "ign-1",
+      "pattern": "node_modules/**",
+      "description": "Node.js dependencies tree",
+      "scope": "Folder wildcard",
+      "enabled": true
+    },
+    {
+      "id": "ign-2",
+      "pattern": ".git/**",
+      "description": "Git version control directory",
+      "scope": "VCS directory",
+      "enabled": true
+    },
+    {
+      "id": "ign-3",
+      "pattern": "Thumbs.db",
+      "description": "Windows thumbnail database cache",
+      "scope": "System files",
+      "enabled": true
+    },
+    {
+      "id": "ign-4",
+      "pattern": "desktop.ini",
+      "description": "Windows folder configuration file",
+      "scope": "System files",
+      "enabled": true
+    },
+    {
+      "id": "ign-5",
+      "pattern": "~$*",
+      "description": "Microsoft Office temporary lock files",
+      "scope": "Temp & lock",
+      "enabled": true
+    },
+    {
+      "id": "ign-6",
+      "pattern": ".DS_Store",
+      "description": "macOS folder attributes cache",
+      "scope": "System hidden",
+      "enabled": true
+    },
+    {
+      "id": "ign-7",
+      "pattern": "*.tmp",
+      "description": "Generic temporary files",
+      "scope": "Extension glob",
+      "enabled": true
+    },
+    {
+      "id": "ign-8",
+      "pattern": ".Spotlight-V100/**",
+      "description": "macOS Spotlight search index",
+      "scope": "System hidden",
+      "enabled": true
+    },
+    {
+      "id": "ign-9",
+      "pattern": ".Trashes/**",
+      "description": "macOS volume trash folder",
+      "scope": "System hidden",
+      "enabled": true
+    },
+    {
+      "id": "ign-10",
+      "pattern": ".venv/**",
+      "description": "Python virtual environment",
+      "scope": "Folder wildcard",
+      "enabled": true
+    },
+    {
+      "id": "ign-11",
+      "pattern": "__pycache__/**",
+      "description": "Python bytecode cache",
+      "scope": "Folder wildcard",
+      "enabled": true
+    },
+    {
+      "id": "ign-12",
+      "pattern": "dist/**",
+      "description": "Compiled distribution artifacts",
+      "scope": "Folder wildcard",
+      "enabled": true
+    },
+    {
+      "id": "ign-13",
+      "pattern": "target/**",
+      "description": "Rust build target artifacts",
+      "scope": "Folder wildcard",
+      "enabled": true
+    }
+  ],
+  "groups": [
+    {
+      "id": "documents",
+      "name": "Documents",
+      "color": "#3B82F6",
+      "categories": [
+        {
+          "id": "pdf-docs",
+          "name": "PDF Documents",
+          "priority": 10,
+          "extensions": [".pdf"],
+          "folder_hints": ["docs", "documents", "papers", "reports"],
+          "name_patterns": []
+        },
+        {
+          "id": "office-docs",
+          "name": "Word & Office Documents",
+          "priority": 11,
+          "extensions": [".docx", ".doc", ".odt", ".rtf"],
+          "folder_hints": ["word", "office", "drafts", "letters"],
+          "name_patterns": []
+        },
+        {
+          "id": "spreadsheets",
+          "name": "Spreadsheets & Financial",
+          "priority": 12,
+          "extensions": [".xlsx", ".xls", ".csv", ".tsv", ".ods", ".numbers"],
+          "folder_hints": ["finance", "sheets", "accounting", "budget", "ledger"],
+          "name_patterns": ["*budget*", "*ledger*", "*financial*", "*balance*"]
+        },
+        {
+          "id": "presentations",
+          "name": "Presentations & Pitch Decks",
+          "priority": 13,
+          "extensions": [".pptx", ".ppt", ".key", ".odp"],
+          "folder_hints": ["slides", "presentations", "decks", "pitch", "keynotes"],
+          "name_patterns": ["*deck*", "*pitch*", "*presentation*"]
+        },
+        {
+          "id": "scanned-docs",
+          "name": "Scanned Documents",
+          "priority": 14,
+          "extensions": [".pdf", ".jpg", ".png", ".tiff"],
+          "name_patterns": ["*scan*", "*img_scan*", "*receipt*", "*invoice_scan*"],
+          "folder_hints": ["scans", "receipts", "scanned"]
+        },
+        {
+          "id": "text-notes",
+          "name": "Notes, Markdown & Text",
+          "priority": 15,
+          "extensions": [".txt", ".md", ".markdown"],
+          "folder_hints": ["notes", "text", "journal", "scratch"],
+          "name_patterns": []
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "name": "Media & Design Assets",
+      "color": "#EC4899",
+      "categories": [
+        {
+          "id": "screenshots",
+          "name": "Screenshots",
+          "priority": 20,
+          "extensions": [".png", ".jpg", ".jpeg", ".webp"],
+          "name_patterns": ["*screenshot*", "*screen shot*", "*capture*", "*snip*", "*cleanshot*", "Screenshot*"],
+          "folder_hints": ["screenshots", "captures", "snips"]
+        },
+        {
+          "id": "photography",
+          "name": "Photography & Raw",
+          "priority": 21,
+          "extensions": [".raw", ".cr2", ".nef", ".arw", ".dng", ".heic", ".jpg", ".jpeg"],
+          "folder_hints": ["photos", "dcim", "camera", "lightroom", "pictures"],
+          "name_patterns": ["IMG_*", "DSC_*", "_MG_*"]
+        },
+        {
+          "id": "design-vectors",
+          "name": "Vector & Icons",
+          "priority": 22,
+          "extensions": [".svg", ".ai", ".eps", ".fig", ".sketch"],
+          "folder_hints": ["design", "vectors", "icons", "figma", "assets/icons"],
+          "name_patterns": []
+        },
+        {
+          "id": "video",
+          "name": "Video Footage",
+          "priority": 23,
+          "extensions": [".mp4", ".mov", ".mkv", ".avi", ".webm", ".m4v", ".flv"],
+          "folder_hints": ["videos", "movies", "recordings", "clips", "obs"],
+          "name_patterns": []
+        },
+        {
+          "id": "audio",
+          "name": "Audio & Music",
+          "priority": 24,
+          "extensions": [".mp3", ".wav", ".flac", ".m4a", ".aac", ".ogg", ".aiff", ".mid"],
+          "folder_hints": ["music", "audio", "podcasts", "recordings", "samples"],
+          "name_patterns": []
+        },
+        {
+          "id": "3d-cad",
+          "name": "3D Assets & CAD",
+          "priority": 25,
+          "extensions": [".blend", ".obj", ".fbx", ".stl", ".step", ".dwg", ".dae", ".gltf", ".glb"],
+          "folder_hints": ["3d", "models", "cad", "blender", "renders"],
+          "name_patterns": []
+        }
+      ]
+    },
+    {
+      "id": "code",
+      "name": "Code & Dev",
+      "color": "#8B5CF6",
+      "categories": [
+        {
+          "id": "env-secrets",
+          "name": "Environment / Secrets",
+          "priority": 1,
+          "sensitive": true,
+          "description": "Sensitive credentials and environment keys. Never opened read-only.",
+          "name_patterns": [".env*", "*.pem", "*.key", "*id_rsa*", "*credentials*", "*secret*", "*token*", "id_ed25519*"],
+          "extensions": [".pem", ".key", ".crt", ".cer"],
+          "folder_hints": []
+        },
+        {
+          "id": "source-code",
+          "name": "Source Repositories",
+          "priority": 30,
+          "extensions": [".ts", ".tsx", ".js", ".jsx", ".py", ".rs", ".go", ".java", ".cpp", ".c", ".h", ".rb", ".php", ".swift", ".kt", ".html", ".css", ".scss"],
+          "folder_hints": ["src", "lib", "source", "repo", "components", "app", "code"],
+          "name_patterns": []
+        },
+        {
+          "id": "dependencies",
+          "name": "Dependencies & Modules",
+          "priority": 31,
+          "folder_hints": ["node_modules", "vendor", "pods", "packages", ".cargo"],
+          "name_patterns": ["package-lock.json", "yarn.lock", "pnpm-lock.yaml", "Cargo.lock", "go.sum", "Gemfile.lock", "poetry.lock"],
+          "extensions": []
+        },
+        {
+          "id": "scripts-binaries",
+          "name": "Scripts & Binaries",
+          "priority": 32,
+          "extensions": [".sh", ".bash", ".zsh", ".bat", ".cmd", ".ps1"],
+          "folder_hints": ["scripts", "bin", "tools", "automation"],
+          "name_patterns": ["deploy*", "build*", "setup*", "start*", "run*"]
+        },
+        {
+          "id": "build-artifacts",
+          "name": "Build Artifacts",
+          "priority": 33,
+          "extensions": [".o", ".out", ".bundle", ".map", ".wasm", ".class"],
+          "folder_hints": ["dist", "build", "target", "out", ".next", "bin"],
+          "name_patterns": []
+        },
+        {
+          "id": "api-schemas",
+          "name": "API Specs & Schemas",
+          "priority": 34,
+          "extensions": [".graphql", ".proto", ".openapi.json", ".swagger.json", ".schema.json"],
+          "name_patterns": ["*schema*", "*openapi*", "*swagger*", "*proto*", "*api-spec*"],
+          "folder_hints": ["schemas", "proto", "graphql", "specs"]
+        }
+      ]
+    },
+    {
+      "id": "user_organized",
+      "name": "User-Organized",
+      "color": "#64748B",
+      "categories": [
+        {
+          "id": "client-deliverables",
+          "name": "Client Deliverables",
+          "priority": 40,
+          "folder_hints": ["clients", "deliverables", "invoices-sent", "final", "client-work"],
+          "extensions": [],
+          "name_patterns": ["*final_v*", "*deliverable*", "*client*"]
+        },
+        {
+          "id": "dated-archives",
+          "name": "Dated Archives",
+          "priority": 41,
+          "folder_hints": ["2023", "2024", "2025", "2026", "q1", "q2", "q3", "q4"],
+          "extensions": [],
+          "name_patterns": []
+        }
+      ]
+    },
+    {
+      "id": "personal_life",
+      "name": "Personal Life",
+      "color": "#10B981",
+      "categories": [
+        {
+          "id": "taxes-gov",
+          "name": "Taxes & Government",
+          "priority": 50,
+          "name_patterns": ["*tax*", "*w2*", "*1099*", "*passport*", "*id_card*", "*gov*", "*irs*"],
+          "folder_hints": ["taxes", "irs", "legal", "government"],
+          "extensions": [".pdf", ".jpg", ".png"]
+        },
+        {
+          "id": "health-medical",
+          "name": "Health & Medical",
+          "priority": 51,
+          "name_patterns": ["*medical*", "*doctor*", "*lab*", "*prescription*", "*health*", "*clinic*"],
+          "folder_hints": ["medical", "health", "insurance", "dental"],
+          "extensions": [".pdf", ".jpg"]
+        },
+        {
+          "id": "real-estate",
+          "name": "Real Estate & Home",
+          "priority": 52,
+          "name_patterns": ["*lease*", "*rent*", "*mortgage*", "*deed*", "*warranty*", "*utility*"],
+          "folder_hints": ["home", "apartment", "property", "lease"],
+          "extensions": [".pdf", ".docx"]
+        },
+        {
+          "id": "travel-tickets",
+          "name": "Travel & Tickets",
+          "priority": 53,
+          "name_patterns": ["*boarding*", "*flight*", "*hotel*", "*itinerary*", "*ticket*", "*airbnb*"],
+          "folder_hints": ["travel", "trips", "vacation", "flights"],
+          "extensions": [".pdf", ".pkpass", ".png"]
+        }
+      ]
+    },
+    {
+      "id": "data_logs",
+      "name": "Data & Logs",
+      "color": "#06B6D4",
+      "categories": [
+        {
+          "id": "db-backups",
+          "name": "Database Backups",
+          "priority": 60,
+          "extensions": [".sql", ".dump", ".sqlite", ".db", ".bak", ".rdb"],
+          "folder_hints": ["backup", "db", "database", "dumps"],
+          "name_patterns": ["*backup*", "*dump*"]
+        },
+        {
+          "id": "raw-data",
+          "name": "Raw Data Pipeline",
+          "priority": 61,
+          "extensions": [".parquet", ".avro", ".feather", ".ndjson", ".jsonl"],
+          "folder_hints": ["data", "pipeline", "datasets", "raw_data"],
+          "name_patterns": ["export_*", "raw_*", "dataset_*"]
+        },
+        {
+          "id": "server-logs",
+          "name": "Server Logs",
+          "priority": 62,
+          "extensions": [".log", ".out", ".err"],
+          "name_patterns": ["*log*", "access_log*", "error_log*"],
+          "folder_hints": ["logs", "crash", "diagnostics"]
+        }
+      ]
+    },
+    {
+      "id": "echt_restaurant",
+      "name": "ECHT Restaurant",
+      "color": "#F97316",
+      "categories": [
+        {
+          "id": "recipes-costing",
+          "name": "ECHT Recipes, Menus & Costing",
+          "priority": 70,
+          "name_patterns": ["*recipe*", "*menu*", "*costing*", "*prep*"],
+          "content_keywords": [
+            "kosher salt",
+            "olive oil",
+            "prep time",
+            "yield",
+            "portions",
+            "ingredients",
+            "degrease",
+            "simmer",
+            "kitchen",
+            "servings",
+            "tblsp",
+            "tablespoon"
+          ],
+          "folder_hints": ["recipes", "echt", "kitchen", "menus", "culinary"],
+          "extensions": [".md", ".txt", ".docx", ".pdf"]
+        },
+        {
+          "id": "supplier-invoices",
+          "name": "Inventory & Supplier Invoices",
+          "priority": 71,
+          "name_patterns": ["*sysco*", "*usfoods*", "*supplier*", "*produce*", "*food-cost*"],
+          "content_keywords": ["invoice", "subtotal", "tax", "due date", "vendor", "po #"],
+          "folder_hints": ["invoices", "suppliers", "inventory", "food-cost"],
+          "extensions": [".pdf", ".xlsx", ".csv"]
+        },
+        {
+          "id": "shift-schedules",
+          "name": "Shift Schedules",
+          "priority": 72,
+          "name_patterns": ["*roster*", "*schedule*", "*shift*", "*staff*", "*hours*"],
+          "folder_hints": ["schedules", "shifts", "staff", "front-of-house", "back-of-house"],
+          "extensions": [".xlsx", ".pdf", ".csv"]
+        }
+      ]
+    },
+    {
+      "id": "career_work",
+      "name": "Career & Work",
+      "color": "#EAB308",
+      "categories": [
+        {
+          "id": "resumes-cv",
+          "name": "Resumes & CVs",
+          "priority": 80,
+          "name_patterns": ["*resume*", "*cv*", "*curriculum*"],
+          "folder_hints": ["resumes", "career", "job-applications"],
+          "extensions": [".pdf", ".docx"]
+        },
+        {
+          "id": "contracts-legal",
+          "name": "Contracts & NDAs",
+          "priority": 81,
+          "name_patterns": ["*contract*", "*nda*", "*agreement*", "*offer*", "*terms*"],
+          "folder_hints": ["contracts", "legal", "agreements"],
+          "extensions": [".pdf", ".docx"]
+        },
+        {
+          "id": "portfolio",
+          "name": "Portfolio & Work Samples",
+          "priority": 82,
+          "folder_hints": ["portfolio", "work-samples", "case-studies"],
+          "name_patterns": ["*portfolio*", "*case_study*"],
+          "extensions": [".pdf", ".fig", ".ai"]
+        }
+      ]
+    },
+    {
+      "id": "temp_junk",
+      "name": "Temp & Junk",
+      "color": "#78716C",
+      "categories": [
+        {
+          "id": "temp-downloads",
+          "name": "Partial Downloads & Temp Files",
+          "priority": 90,
+          "extensions": [".crdownload", ".part", ".tmp", ".download", ".aria2"],
+          "folder_hints": ["temp", "tmp", "cache"],
+          "name_patterns": ["*.tmp", "*.part", "*.crdownload"]
+        },
+        {
+          "id": "scratchpads",
+          "name": "Scratchpads & Untitled",
+          "priority": 91,
+          "name_patterns": ["untitled*", "draft*", "temp*", "scratch*", "new document*"],
+          "folder_hints": ["scratch", "temp"],
+          "extensions": [".txt", ".md", ""]
+        }
+      ]
+    },
+    {
+      "id": "archives",
+      "name": "Archives & Compressed",
+      "color": "#D97706",
+      "categories": [
+        {
+          "id": "zip-archives",
+          "name": "Zip & Compressed Archives",
+          "priority": 95,
+          "extensions": [".zip", ".tar", ".gz", ".tar.gz", ".tgz", ".bz2", ".xz", ".7z", ".rar"],
+          "folder_hints": ["archives", "zips", "backups", "compressed"],
+          "name_patterns": []
+        },
+        {
+          "id": "disk-images",
+          "name": "Disk Images (ISO/DMG)",
+          "priority": 96,
+          "extensions": [".iso", ".dmg", ".img", ".vmdk", ".qcow2"],
+          "folder_hints": ["disk-images", "iso", "images"],
+          "name_patterns": []
+        }
+      ]
+    },
+    {
+      "id": "installers_system",
+      "name": "Installers & System",
+      "color": "#94A3B8",
+      "categories": [
+        {
+          "id": "installers-bin",
+          "name": "Installers & Executables",
+          "priority": 98,
+          "extensions": [".exe", ".msi", ".dmg", ".pkg", ".deb", ".rpm", ".appimage"],
+          "folder_hints": ["installers", "apps", "setup", "packages"],
+          "name_patterns": ["*setup*", "*installer*"]
+        },
+        {
+          "id": "system-configs",
+          "name": "System Configurations",
+          "priority": 99,
+          "extensions": [".conf", ".cfg", ".ini", ".plist", ".reg", ".yaml", ".yml"],
+          "folder_hints": ["config", "settings", "etc"],
+          "name_patterns": []
+        },
+        {
+          "id": "shortcuts",
+          "name": "Shortcuts & Web Links",
+          "priority": 100,
+          "extensions": [".webloc", ".url", ".lnk", ".desktop"],
+          "folder_hints": ["shortcuts", "bookmarks", "links"],
+          "name_patterns": []
+        }
+      ]
+    }
+  ]
+}

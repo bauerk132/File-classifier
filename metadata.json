@@ -1,0 +1,6 @@
+{
+  "name": "Sorter",
+  "description": "Classify and organize files in any folder with 4-tier classification, dry-run safety guarantees, review queue, and customizable taxonomy.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
