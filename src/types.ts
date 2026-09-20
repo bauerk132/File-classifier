@@ -44,7 +44,18 @@ export interface Taxonomy {
   groups: TaxonomyGroup[];
 }
 
-export type MatchEngine = 'name_rule' | 'content_check' | 'web_lookup' | 'manual' | 'ignored';
+export type MatchEngine = 'name_rule' | 'content_check' | 'web_lookup' | 'manual' | 'ignored' | 'ai_analysis';
+
+export interface AIProviderStatus {
+  primaryProvider: 'azure' | 'gemini' | 'none';
+  azureConfigured: boolean;
+  azureEndpoint?: string;
+  azureDeployment?: string;
+  azureApiVersion?: string;
+  geminiConfigured: boolean;
+  activeProvider: 'azure' | 'gemini' | 'none';
+  message: string;
+}
 
 export interface DriveVolumeInfo {
   letter: string; // 'C:' or 'D:'
@@ -80,6 +91,8 @@ export interface FileRecord {
   targetCategoryName: string;
   confidence: number;
   matchEngine: MatchEngine;
+  aiProvider?: 'azure' | 'gemini';
+  aiModel?: string;
   ruleIdentifier: string;
   whyExplanation: string;
   matchedSignals: string[];

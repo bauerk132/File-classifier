@@ -11,9 +11,10 @@ import {
   ShieldCheck, 
   Sparkles,
   ChevronDown,
-  HardDrive
+  HardDrive,
+  Cloud
 } from 'lucide-react';
-import { ScreenType, UserProfile } from '../types';
+import { ScreenType, UserProfile, AIProviderStatus } from '../types';
 
 interface NavbarProps {
   currentScreen: ScreenType;
@@ -27,6 +28,8 @@ interface NavbarProps {
   onOpenProfileManager: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  aiStatus: AIProviderStatus | null;
+  onOpenAzureAIModal: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -41,6 +44,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenProfileManager,
   searchQuery,
   onSearchChange,
+  aiStatus,
+  onOpenAzureAIModal,
 }) => {
   const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
@@ -81,13 +86,33 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {/* Azure AI Telemetry Badge & Modal Trigger */}
+          <button 
+            onClick={onOpenAzureAIModal}
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg border transition-all cursor-pointer shadow-sm ${
+              aiStatus?.azureConfigured
+                ? 'bg-gradient-to-r from-blue-950/80 to-cyan-950/80 border-cyan-500/50 text-cyan-200 hover:border-cyan-400 shadow-cyan-900/30'
+                : 'bg-slate-900/90 border-blue-500/40 text-blue-200 hover:bg-slate-800 hover:border-blue-400'
+            }`}
+            title="Azure AI Provider Status - Click to inspect or configure"
+          >
+            <Cloud className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+            <span className="font-sans font-black text-[11px] text-white tracking-wide">Azure AI</span>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300">
+              {aiStatus?.azureDeployment || 'gpt-4o-mini'}
+            </span>
+            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+              aiStatus?.azureConfigured ? 'bg-emerald-400 shadow-sm shadow-emerald-400 animate-pulse' : 'bg-amber-400'
+            }`} />
+          </button>
+
           <button 
             onClick={onOpenWizard}
-            className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 transition-colors cursor-pointer"
+            className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 transition-colors cursor-pointer"
           >
             <Sparkles className="w-3 h-3 text-indigo-400" />
-            <span className="font-sans text-[11px] font-semibold">First-Run Wizard</span>
+            <span className="font-sans text-[11px] font-semibold">Wizard</span>
           </button>
 
           {/* Profile Switcher */}

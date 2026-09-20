@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
   ShieldAlert, 
@@ -11,7 +11,10 @@ import {
   HardDrive, 
   Layers, 
   Globe, 
-  Cpu
+  Cpu,
+  Cloud,
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { FileRecord, Taxonomy } from '../types';
 
@@ -21,6 +24,7 @@ interface FileDetailDrawerProps {
   onAccept: (fileId: string) => void;
   onRecategorize: (fileId: string, targetGroupId: string, targetCategoryId: string) => void;
   taxonomy: Taxonomy;
+  onAzureAIAnalyzeFile?: (fileId: string) => Promise<void>;
 }
 
 export const FileDetailDrawer: React.FC<FileDetailDrawerProps> = ({
@@ -28,8 +32,10 @@ export const FileDetailDrawer: React.FC<FileDetailDrawerProps> = ({
   onClose,
   onAccept,
   onRecategorize,
-  taxonomy
+  taxonomy,
+  onAzureAIAnalyzeFile
 }) => {
+  const [analyzingWithAI, setAnalyzingWithAI] = useState(false);
   if (!file) return null;
 
   const formatBytes = (bytes: number): string => {
@@ -92,6 +98,19 @@ export const FileDetailDrawer: React.FC<FileDetailDrawerProps> = ({
           </div>
         )}
 
+        {/* Azure AI Inference Highlight */}
+        {file.matchEngine === 'ai_analysis' && (
+          <div className="p-3.5 rounded-xl bg-gradient-to-r from-blue-950/80 to-cyan-950/80 border border-cyan-500/50 flex items-center justify-between text-xs shadow-md shadow-cyan-950/40">
+            <div className="flex items-center gap-2 text-cyan-200 font-bold">
+              <Cloud className="w-4 h-4 text-cyan-400" />
+              <span>Azure AI Inference Active</span>
+            </div>
+            <span className="font-mono text-[10px] text-cyan-200 bg-cyan-900/60 px-2.5 py-0.5 rounded border border-cyan-500/40">
+              {file.aiModel || 'gpt-4o-mini'}
+            </span>
+          </div>
+        )}
+
         {/* Destination & Confidence Block */}
         <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-3">
           <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
@@ -130,7 +149,31 @@ export const FileDetailDrawer: React.FC<FileDetailDrawerProps> = ({
         <div className="space-y-2">
           <div className="text-[11px] uppercase tracking-wider text-slate-400 font-semibold flex items-center justify-between">
             <span>Why This Category?</span>
-            <span className="font-mono text-[10px] text-cyan-400 font-normal">Method: {file.matchEngine.replace('_', ' ').toUpperCase()}</span>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[10px] text-cyan-400 font-normal">Method: {file.matchEngine.replace('_', ' ').toUpperCase()}</span>
+              {onAzureAIAnalyzeFile && !file.systemProtected && (
+                <button
+                  onClick={async () => {
+                    setAnalyzingWithAI(true);
+                    try {
+                      await onAzureAIAnalyzeFile(file.id);
+                    } finally {
+                      setAnalyzingWithAI(false);
+                    }
+                  }}
+                  disabled={analyzingWithAI}
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-blue-950/80 hover:bg-blue-900 border border-cyan-500/40 text-cyan-300 text-[10px] font-bold cursor-pointer transition-all"
+                  title="Run Azure AI analysis on this file"
+                >
+                  {analyzingWithAI ? (
+                    <RefreshCw className="w-3 h-3 animate-spin text-cyan-300" />
+                  ) : (
+                    <Cloud className="w-3 h-3 text-cyan-400" />
+                  )}
+                  <span>{analyzingWithAI ? 'Analyzing...' : 'Ask Azure AI'}</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div className={`p-4 rounded-xl border leading-relaxed ${

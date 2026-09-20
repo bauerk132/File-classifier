@@ -14,8 +14,9 @@ import { RulesScreen } from './components/RulesScreen';
 import { HistoryScreen } from './components/HistoryScreen';
 import { WizardModal } from './components/WizardModal';
 import { ProfileModal } from './components/ProfileModal';
+import { AzureAIModal } from './components/AzureAIModal';
 
-import { ScreenType, FileRecord, Taxonomy, UserProfile, RunHistoryItem, TaxonomyCategory } from './types';
+import { ScreenType, FileRecord, Taxonomy, UserProfile, RunHistoryItem, TaxonomyCategory, AIProviderStatus } from './types';
 import { DEFAULT_TAXONOMY_JSON } from './data/defaultTaxonomy';
 import { getGeneratedSampleFiles } from './data/sampleFiles';
 import { classifyFile } from './utils/classifier';
@@ -69,6 +70,28 @@ export default function App() {
   // Modals state
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAzureModalOpen, setIsAzureModalOpen] = useState(false);
+
+  // Azure AI State
+  const [aiStatus, setAiStatus] = useState<AIProviderStatus | null>(null);
+  const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
+
+  // Query AI provider telemetry
+  const refreshAIStatus = async () => {
+    try {
+      const res = await fetch('/api/ai-provider-status');
+      if (res.ok) {
+        const data = await res.json();
+        setAiStatus(data);
+      }
+    } catch (err) {
+      console.error('Failed to query AI provider status', err);
+    }
+  };
+
+  useEffect(() => {
+    refreshAIStatus();
+  }, []);
 
   // Run History state
   const [history, setHistory] = useState<RunHistoryItem[]>([
@@ -254,6 +277,139 @@ export default function App() {
     }));
   };
 
+  // Azure AI Analysis Handlers
+  const handleAzureAIBatchAnalyze = async () => {
+    // Select review queue files or lower-confidence items
+    const targetFiles = files.filter(f => f.needsReview || f.confidence < 0.85);
+    if (targetFiles.length === 0) {
+      alert('All files are already high-confidence or organized.');
+      return;
+    }
+
+    setIsAiAnalyzing(true);
+    try {
+      const res = await fetch('/api/ai-batch-analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          files: targetFiles.map(f => ({
+            id: f.id,
+            name: f.name,
+            relativePath: f.relativePath || f.path,
+            size: f.size,
+            extension: f.extension,
+            contentSample: f.contentSample
+          })),
+          taxonomy
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error(`AI Batch classification failed (${res.statusText})`);
+      }
+
+      const data = await res.json();
+      const results: Array<{
+        fileId: string;
+        targetGroupId: string;
+        targetGroupName: string;
+        targetCategoryId: string;
+        targetCategoryName: string;
+        confidence: number;
+        whyExplanation: string;
+        matchedSignals: string[];
+        aiProvider: string;
+        aiModel: string;
+      }> = data.results || [];
+
+      setFiles(prev => prev.map(f => {
+        const match = results.find(r => r.fileId === f.id);
+        if (!match) return f;
+        const group = taxonomy.groups.find(g => g.id === match.targetGroupId);
+        return {
+          ...f,
+          targetGroupId: match.targetGroupId,
+          targetGroupName: match.targetGroupName,
+          targetGroupColor: group?.color || f.targetGroupColor,
+          targetCategoryId: match.targetCategoryId,
+          targetCategoryName: match.targetCategoryName,
+          confidence: match.confidence,
+          whyExplanation: match.whyExplanation,
+          matchedSignals: match.matchedSignals || [],
+          matchEngine: 'ai_analysis' as const,
+          aiProvider: (match.aiProvider === 'gemini' ? 'gemini' : 'azure') as 'azure' | 'gemini',
+          aiModel: match.aiModel,
+          needsReview: match.confidence < 0.75,
+          status: (match.confidence >= 0.75 ? 'accepted' : 'pending') as FileRecord['status']
+        };
+      }));
+    } catch (err: any) {
+      console.error('Batch AI analysis error:', err);
+      alert(`Azure AI Batch Analysis: ${err?.message || 'Failed to connect. Please open Azure AI settings in the navbar.'}`);
+    } finally {
+      setIsAiAnalyzing(false);
+      refreshAIStatus();
+    }
+  };
+
+  const handleAzureAIAnalyzeFile = async (fileId: string) => {
+    const file = files.find(f => f.id === fileId);
+    if (!file) return;
+
+    try {
+      const res = await fetch('/api/ai-classify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileRecord: {
+            id: file.id,
+            name: file.name,
+            relativePath: file.relativePath || file.path,
+            size: file.size,
+            extension: file.extension,
+            contentSample: file.contentSample
+          },
+          taxonomy
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || 'Azure AI classification call failed.');
+      }
+
+      const classification = await res.json();
+      const group = taxonomy.groups.find(g => g.id === classification.targetGroupId);
+
+      const updatedFile: FileRecord = {
+        ...file,
+        targetGroupId: classification.targetGroupId,
+        targetGroupName: classification.targetGroupName,
+        targetGroupColor: group?.color || file.targetGroupColor,
+        targetCategoryId: classification.targetCategoryId,
+        targetCategoryName: classification.targetCategoryName,
+        confidence: classification.confidence,
+        whyExplanation: classification.whyExplanation,
+        matchedSignals: classification.matchedSignals || [],
+        matchEngine: 'ai_analysis' as const,
+        aiProvider: (classification.aiProvider === 'gemini' ? 'gemini' : 'azure') as 'azure' | 'gemini',
+        aiModel: classification.aiModel,
+        needsReview: classification.confidence < 0.75,
+        status: (classification.confidence >= 0.75 ? 'accepted' : 'pending') as FileRecord['status']
+      };
+
+      setFiles(prev => prev.map(f => f.id === fileId ? updatedFile : f));
+      if (selectedFile && selectedFile.id === fileId) {
+        setSelectedFile(updatedFile);
+      }
+    } catch (err: any) {
+      console.error('Single file Azure AI error:', err);
+      alert(`Azure AI File Analysis: ${err?.message || 'Failed to contact Azure AI endpoint.'}`);
+    } finally {
+      refreshAIStatus();
+    }
+  };
+
   // Organize execution
   const handleExecuteOrganize = (runData: Omit<RunHistoryItem, 'id' | 'timestamp'>) => {
     const newRun: RunHistoryItem = {
@@ -354,6 +510,8 @@ export default function App() {
         onSelectProfile={handleSelectProfile}
         onOpenWizard={() => setIsWizardOpen(true)}
         onOpenProfileManager={() => setIsProfileModalOpen(true)}
+        onOpenAzureAIModal={() => setIsAzureModalOpen(true)}
+        aiStatus={aiStatus}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -386,6 +544,10 @@ export default function App() {
             onNavigateToOrganize={() => setCurrentScreen('organize')}
             onNavigateToCleanup={() => setCurrentScreen('cleanup')}
             searchQuery={searchQuery}
+            aiStatus={aiStatus}
+            onAzureAIBatchAnalyze={handleAzureAIBatchAnalyze}
+            onAzureAIAnalyzeFile={handleAzureAIAnalyzeFile}
+            isAiAnalyzing={isAiAnalyzing}
           />
         )}
 
@@ -398,6 +560,10 @@ export default function App() {
             onChangeFileCategory={handleChangeFileCategory}
             onAcceptAllHighConfidence={handleAcceptAllHighConfidence}
             onNavigateToOrganize={() => setCurrentScreen('organize')}
+            onAzureAIBatchAnalyze={handleAzureAIBatchAnalyze}
+            onAzureAIAnalyzeFile={handleAzureAIAnalyzeFile}
+            isAiAnalyzing={isAiAnalyzing}
+            aiStatus={aiStatus}
           />
         )}
 
@@ -438,6 +604,14 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Azure AI Configuration Modal */}
+      <AzureAIModal
+        isOpen={isAzureModalOpen}
+        onClose={() => setIsAzureModalOpen(false)}
+        status={aiStatus}
+        onRefreshStatus={refreshAIStatus}
+      />
 
       {/* First-Run Setup Wizard Modal */}
       <WizardModal

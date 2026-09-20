@@ -21,9 +21,12 @@ import {
   Trash2,
   HardDrive,
   ShieldCheck,
-  Folder
+  Folder,
+  Cloud,
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
-import { FileRecord, Taxonomy, MatchEngine } from '../types';
+import { FileRecord, Taxonomy, MatchEngine, AIProviderStatus } from '../types';
 import { FileDetailDrawer } from './FileDetailDrawer';
 
 interface ResultsScreenProps {
@@ -38,6 +41,10 @@ interface ResultsScreenProps {
   onNavigateToOrganize: () => void;
   onNavigateToCleanup?: () => void;
   searchQuery: string;
+  aiStatus?: AIProviderStatus | null;
+  onAzureAIBatchAnalyze?: () => Promise<void>;
+  onAzureAIAnalyzeFile?: (fileId: string) => Promise<void>;
+  isAiAnalyzing?: boolean;
 }
 
 export const ResultsScreen: React.FC<ResultsScreenProps> = ({
@@ -51,7 +58,11 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
   onNavigateToReview,
   onNavigateToOrganize,
   onNavigateToCleanup,
-  searchQuery
+  searchQuery,
+  aiStatus,
+  onAzureAIBatchAnalyze,
+  onAzureAIAnalyzeFile,
+  isAiAnalyzing
 }) => {
   const [selectedGroupId, setSelectedGroupId] = useState<string>('all');
   const [selectedEngine, setSelectedEngine] = useState<string>('all');
@@ -69,6 +80,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
     const nameCount = files.filter(f => f.matchEngine === 'name_rule').length;
     const contentCount = files.filter(f => f.matchEngine === 'content_check').length;
     const webCount = files.filter(f => f.matchEngine === 'web_lookup').length;
+    const aiCount = files.filter(f => f.matchEngine === 'ai_analysis').length;
     const reviewCount = files.filter(f => f.needsReview).length;
     const duplicateCount = files.filter(f => f.isDuplicate).length;
     const sensitiveCount = files.filter(f => f.sensitive).length;
@@ -82,6 +94,8 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
       contentPct: total ? ((contentCount / total) * 100).toFixed(1) : '0',
       webCount,
       webPct: total ? ((webCount / total) * 100).toFixed(1) : '0',
+      aiCount,
+      aiPct: total ? ((aiCount / total) * 100).toFixed(1) : '0',
       reviewCount,
       duplicateCount,
       sensitiveCount,
@@ -172,7 +186,29 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {onAzureAIBatchAnalyze && (
+            <button
+              onClick={onAzureAIBatchAnalyze}
+              disabled={isAiAnalyzing || metrics.reviewCount === 0}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-cyan-600 hover:from-blue-600 hover:to-cyan-500 disabled:opacity-50 text-white text-xs font-bold shadow-lg shadow-cyan-950/40 border border-cyan-400/40 transition-all cursor-pointer"
+              title="Run Azure AI deep classification on ambiguous items"
+            >
+              {isAiAnalyzing ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-300" />
+                  <span>Azure AI Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <Cloud className="w-3.5 h-3.5 text-cyan-300" />
+                  <span>Azure AI Analyze ({metrics.reviewCount})</span>
+                  <Sparkles className="w-3 h-3 text-cyan-200" />
+                </>
+              )}
+            </button>
+          )}
+
           <button
             onClick={onNavigateToReview}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition-all cursor-pointer"
@@ -228,8 +264,8 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         </div>
       </div>
 
-      {/* Top 7 Metrics Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+      {/* Top 8 Metrics Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         {/* Total Files */}
         <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800">
           <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Total Files</div>
@@ -248,14 +284,32 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800">
           <div className="text-[10px] uppercase tracking-wider font-semibold text-purple-400">Content Check</div>
           <div className="text-lg font-black font-mono text-white mt-1">{metrics.contentCount.toLocaleString()}</div>
-          <div className="text-[10px] text-purple-400/80 font-mono mt-0.5">{metrics.contentPct}% opened read-only</div>
+          <div className="text-[10px] text-purple-400/80 font-mono mt-0.5">{metrics.contentPct}% read-only</div>
         </div>
 
         {/* Web Lookup */}
         <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800">
           <div className="text-[10px] uppercase tracking-wider font-semibold text-cyan-400">Web Lookup</div>
           <div className="text-lg font-black font-mono text-white mt-1">{metrics.webCount.toLocaleString()}</div>
-          <div className="text-[10px] text-cyan-400/80 font-mono mt-0.5">{metrics.webPct}% extension registry</div>
+          <div className="text-[10px] text-cyan-400/80 font-mono mt-0.5">{metrics.webPct}% registry</div>
+        </div>
+
+        {/* Azure AI Analysis Card */}
+        <div 
+          onClick={() => setSelectedEngine(selectedEngine === 'ai_analysis' ? 'all' : 'ai_analysis')}
+          className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+            selectedEngine === 'ai_analysis'
+              ? 'bg-cyan-500/20 border-cyan-400 shadow-md shadow-cyan-500/30'
+              : 'bg-slate-900/90 border-slate-800 hover:border-cyan-500/40'
+          }`}
+          title="Click to filter by Azure AI classified files"
+        >
+          <div className="text-[10px] uppercase tracking-wider font-semibold text-cyan-300 flex items-center gap-1">
+            <Cloud className="w-3 h-3 text-cyan-400" />
+            <span>Azure AI</span>
+          </div>
+          <div className="text-lg font-black font-mono text-cyan-200 mt-1">{metrics.aiCount.toLocaleString()}</div>
+          <div className="text-[10px] text-cyan-400/80 font-mono mt-0.5">{metrics.aiPct}% resolved</div>
         </div>
 
         {/* Need Review */}
@@ -276,7 +330,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800">
           <div className="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Duplicates</div>
           <div className="text-lg font-black font-mono text-slate-200 mt-1">{metrics.duplicateCount}</div>
-          <div className="text-[10px] text-slate-500 mt-0.5">~420 MB duplicate</div>
+          <div className="text-[10px] text-slate-500 mt-0.5">~420 MB dup</div>
         </div>
 
         {/* Sensitive */}
@@ -527,17 +581,24 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
 
                       {/* Engine */}
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
-                          file.matchEngine === 'content_check'
-                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                            : file.matchEngine === 'web_lookup'
-                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                            : file.matchEngine === 'ignored'
-                            ? 'bg-slate-800 text-slate-400'
-                            : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                        }`}>
-                          {file.matchEngine.replace('_', ' ').toUpperCase()}
-                        </span>
+                        {file.matchEngine === 'ai_analysis' ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 inline-flex items-center gap-1">
+                            <Cloud className="w-3 h-3 text-cyan-400" />
+                            AZURE AI
+                          </span>
+                        ) : (
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                            file.matchEngine === 'content_check'
+                              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                              : file.matchEngine === 'web_lookup'
+                              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                              : file.matchEngine === 'ignored'
+                              ? 'bg-slate-800 text-slate-400'
+                              : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                          }`}>
+                            {file.matchEngine.replace('_', ' ').toUpperCase()}
+                          </span>
+                        )}
                       </td>
 
                       {/* Confidence */}
@@ -644,6 +705,7 @@ export const ResultsScreen: React.FC<ResultsScreenProps> = ({
         onAccept={onAcceptClassification}
         onRecategorize={onRecategorize}
         taxonomy={taxonomy}
+        onAzureAIAnalyzeFile={onAzureAIAnalyzeFile}
       />
     </div>
   );

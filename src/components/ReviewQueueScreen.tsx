@@ -12,9 +12,12 @@ import {
   ChevronRight,
   ChevronDown,
   CornerDownRight,
-  Keyboard
+  Keyboard,
+  Cloud,
+  Zap,
+  RefreshCw
 } from 'lucide-react';
-import { FileRecord, Taxonomy } from '../types';
+import { FileRecord, Taxonomy, AIProviderStatus } from '../types';
 
 interface ReviewQueueScreenProps {
   files: FileRecord[];
@@ -24,6 +27,10 @@ interface ReviewQueueScreenProps {
   onChangeFileCategory: (fileId: string, groupId: string, catId: string) => void;
   onAcceptAllHighConfidence: () => void;
   onNavigateToOrganize: () => void;
+  aiStatus?: AIProviderStatus | null;
+  onAzureAIBatchAnalyze?: () => Promise<void>;
+  onAzureAIAnalyzeFile?: (fileId: string) => Promise<void>;
+  isAiAnalyzing?: boolean;
 }
 
 export const ReviewQueueScreen: React.FC<ReviewQueueScreenProps> = ({
@@ -33,7 +40,11 @@ export const ReviewQueueScreen: React.FC<ReviewQueueScreenProps> = ({
   onSkipFile,
   onChangeFileCategory,
   onAcceptAllHighConfidence,
-  onNavigateToOrganize
+  onNavigateToOrganize,
+  aiStatus,
+  onAzureAIBatchAnalyze,
+  onAzureAIAnalyzeFile,
+  isAiAnalyzing
 }) => {
   // Review items are those with needsReview === true or status === 'pending'
   const reviewFiles = files.filter(f => f.needsReview || f.matchEngine === 'content_check' || f.matchEngine === 'web_lookup');
@@ -42,6 +53,7 @@ export const ReviewQueueScreen: React.FC<ReviewQueueScreenProps> = ({
   const [alwaysCreateRule, setAlwaysCreateRule] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [reviewedCount, setReviewedCount] = useState(12);
+  const [singleAnalyzingId, setSingleAnalyzingId] = useState<string | null>(null);
 
   const activeFile = reviewFiles.find(f => f.id === selectedFileId) || reviewFiles[0];
 
@@ -117,12 +129,34 @@ export const ReviewQueueScreen: React.FC<ReviewQueueScreenProps> = ({
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {onAzureAIBatchAnalyze && (
+            <button
+              onClick={onAzureAIBatchAnalyze}
+              disabled={isAiAnalyzing || reviewFiles.length === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-cyan-600 hover:from-blue-600 hover:to-cyan-500 disabled:opacity-50 text-white text-xs font-bold shadow-lg shadow-cyan-900/40 border border-cyan-400/40 transition-all cursor-pointer"
+              title="Run Azure AI deep semantic classification on all items in queue"
+            >
+              {isAiAnalyzing ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-300" />
+                  <span>Azure AI Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <Cloud className="w-3.5 h-3.5 text-cyan-300" />
+                  <span>Azure AI Batch ({reviewFiles.length})</span>
+                  <Sparkles className="w-3 h-3 text-cyan-200" />
+                </>
+              )}
+            </button>
+          )}
+
           <button
             onClick={onAcceptAllHighConfidence}
             className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors cursor-pointer"
           >
-            Accept All High-Confidence
+            Accept High-Confidence
           </button>
 
           <button
@@ -245,7 +279,7 @@ export const ReviewQueueScreen: React.FC<ReviewQueueScreenProps> = ({
               {/* File Title & Status */}
               <div className="flex items-start justify-between gap-4 border-b border-slate-800 pb-5">
                 <div>
-                  <div className="flex items-center gap-2 mb-1.5">
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300">
                       {activeFile.extension || 'NO-EXT'}
                     </span>
@@ -254,9 +288,16 @@ export const ReviewQueueScreen: React.FC<ReviewQueueScreenProps> = ({
                     }`}>
                       {Math.round(activeFile.confidence * 100)}% Confidence
                     </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                      {activeFile.matchEngine.replace('_', ' ').toUpperCase()}
-                    </span>
+                    {activeFile.matchEngine === 'ai_analysis' ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1">
+                        <Cloud className="w-3 h-3 text-cyan-400" />
+                        AZURE AI ({activeFile.aiModel || 'gpt-4o-mini'})
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                        {activeFile.matchEngine.replace('_', ' ').toUpperCase()}
+                      </span>
+                    )}
                   </div>
                   <h2 className="text-xl font-bold font-mono text-white break-all">
                     {activeFile.name}
@@ -265,6 +306,34 @@ export const ReviewQueueScreen: React.FC<ReviewQueueScreenProps> = ({
                     Path: <span className="font-mono text-slate-300">{activeFile.relativePath || activeFile.path}</span> · Size: <span className="font-mono text-slate-300">{formatBytes(activeFile.size)}</span>
                   </p>
                 </div>
+
+                {onAzureAIAnalyzeFile && (
+                  <button
+                    onClick={async () => {
+                      setSingleAnalyzingId(activeFile.id);
+                      try {
+                        await onAzureAIAnalyzeFile(activeFile.id);
+                      } finally {
+                        setSingleAnalyzingId(null);
+                      }
+                    }}
+                    disabled={singleAnalyzingId === activeFile.id}
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-900/80 to-cyan-900/80 hover:from-blue-800 hover:to-cyan-800 border border-cyan-500/40 text-cyan-200 text-xs font-bold transition-all shadow-md shadow-cyan-950/40 cursor-pointer shrink-0"
+                    title="Re-analyze this file individually using Azure AI"
+                  >
+                    {singleAnalyzingId === activeFile.id ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-300" />
+                        <span>Analyzing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Cloud className="w-3.5 h-3.5 text-cyan-400" />
+                        <span>Ask Azure AI</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
               {/* Proposed Category Box */}
